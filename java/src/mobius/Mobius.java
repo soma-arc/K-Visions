@@ -1,5 +1,7 @@
 package mobius;
 
+import schottky.figure.Circle;
+import schottky.twinCircles.TwinCircles;
 import group.SL2C;
 import number.Complex;
 
@@ -34,5 +36,75 @@ public class Mobius {
 				return Complex.div( numerix, denominator);
 			}
 		}
+	}
+	
+	public static SL2C getSymmetricTransformation(Circle c1, Circle c2){
+		Complex P = c1.getCenter();
+		double r = c1.getR();
+		Complex Q = c2.getCenter();
+		double s = c2.getR();
+
+		return new SL2C(
+				Q, new Complex(r * s, 0).sub(P.mult(Q)),
+				Complex.ONE, P.mult(-1));
+	}
+
+	public static SL2C getSymmetricTransformation(Circle c1, Circle c2, Complex u, Complex v){
+		Complex P = c1.getCenter();
+		double r = c1.getR();
+		Complex Q = c2.getCenter();
+		double s = c2.getR();
+
+		return new SL2C(
+				u.conjugate().mult(s), v.conjugate().mult(r).sub(u.conjugate().mult(P).mult(s)).sub(P.mult(Q).mult(u)).add(v.mult(Q.mult(r))),
+				u, v.mult(r).sub(u.mult(P)));
+	}
+	
+	public static Circle onCircle(SL2C t, Circle c){
+		Complex rad = new Complex(c.getR(), 0);
+		Complex z = c.getCenter().sub( rad.mult(rad).div( Complex.conjugate(t.d.div(t.c).add(c.getCenter()))));
+		Complex newCenter = onPoint(t, z);
+		double newR = Complex.abs(newCenter.sub( onPoint(t, c.getCenter().add(c.getR()))));
+		return new Circle(newCenter, newR);
+	}
+
+	public static SL2C getMobiusTransform(Circle c1, Circle c2){
+		Complex z1 = c1.getP1();
+		Complex z2 = c1.getP2();
+		Complex z3 = c1.getP3();
+		Complex w1 = c2.getP1();
+		Complex w2 = c2.getP2();
+		Complex w3 = c2.getP3();
+
+		SL2C m1 = new SL2C(
+				z2.sub(z3), z1.mult(-1).mult(z2.sub(z3)),
+				z2.sub(z1), z3.mult(-1).mult(z2.sub(z1)));
+		SL2C m2 = new SL2C(
+				w2.sub(w3), w1.mult(-1).mult(w2.sub(w3)),
+				w2.sub(w1), w3.mult(-1).mult(w2.sub(w1)));
+		return m2.inverse().mult(m1);
+	}
+
+	public static SL2C getMobiusTransform(TwinCircles tc){
+		Circle c1 = tc.getC1();
+		Circle c2 = tc.getC2();
+		Complex z1 = c1.getP1();
+		Complex z2 = c1.getP2();
+		Complex z3 = c1.getP3();
+		Complex w1 = c2.getP1();
+		Complex w2 = c2.getP2();
+		Complex w3 = c2.getP3();
+//		System.out.println("w2"+ w2);
+//		System.out.println("w3"+ w3);
+		SL2C m1 = new SL2C(
+				z2.sub(z3), z1.mult(-1).mult(z2.sub(z3)),
+				z2.sub(z1), z3.mult(-1).mult(z2.sub(z1)));
+//		System.out.println("m1 "+ m1);
+		SL2C m2 = new SL2C(
+				w2.sub(w3), w1.mult(-1).mult(w2.sub(w3)),
+				w2.sub(w1), w3.mult(-1).mult(w2.sub(w1)));
+//		System.out.println("m2 inv");
+//		System.out.println(m2.inverse());
+		return m2.inverse().mult(m1);
 	}
 }
