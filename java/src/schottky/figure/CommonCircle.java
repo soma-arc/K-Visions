@@ -71,13 +71,9 @@ public class CommonCircle {
 	private TwinCircles tc1, tc2;
 	Circle[] contactCircles = new Circle[4];
 	public void calcContactCircles(){
-		//System.out.println(Line.getMidperpendicular(Complex.ZERO, new Complex(1, 1)).getX(-0.5));
 		Circle[] circles = new Circle[4];
 		Complex pqMidPoint = new Complex((p.re() + q.re())/2,(p.im() + q.im())/2);
 		//Line pqMid = new Line(center, pqMidPoint);//Line.getMidperpendicular(p, q);
-		//System.out.println("pq mid"+ pqMid);
-		//System.out.println("tan "+ getTangentLine(p));
-		//a = getTangentLine(p).getIntersection(pqMid);
 		
 		//System.out.println("a"+ a);
 		Line qrMid = new Line(center, new Complex((q.re() + r.re())/2,(q.im() + r.im())/2));
@@ -95,7 +91,6 @@ public class CommonCircle {
 		circles[0].setP1(p);
 		circles[0].setP2(calcNewP2(circles[0]));
 		circles[0].setP3(q);
-		//System.out.println(circles[0]);
 		
 		circles[1] = new Circle(b, b.dist(q));
 		circles[1].setP1(q);
@@ -128,10 +123,10 @@ public class CommonCircle {
 		return contactCircles;
 	}
 	
-	public ArrayList<ArrayList<Circle>> runBFS(int maxLevel, double expansion){
+	public ArrayList<ArrayList<Circle>> runBFS(int maxLevel, double epsilon){
 		TwoGensGroup g = new TwoGensGroup(tc1, tc2);
 		SchottkyExplorer bfs = new SchottkyExplorer(g);
-		bfs.run(maxLevel, expansion);
+		bfs.run(maxLevel, epsilon);
 		return bfs.getCircles();
 	}
 	
@@ -160,29 +155,8 @@ public class CommonCircle {
 			double coeffX = p.re() - center.re();
 			double coeffY = p.im() - center.im();
 			return new Line(-coeffX / coeffY, (rad * rad + coeffX * center.re() + coeffY * center.im() ) / coeffY,0);
-			//return new Line(-p.re() / p.im(), rad * rad / p.im(),0);
 		}
 	}
-	
-//	public Circle[] getContactCircles(){
-//		Circle[] circles = new Circle[4];
-//		circles[0] = getIntersectCircle(p, q);
-//		circles[1] = getIntersectCircle(q, r);
-//		circles[2] = getIntersectCircle(r, s);
-//		circles[3] = getIntersectCircle(s, p);
-//		return circles;
-//	}
-//	
-//	private Circle getIntersectCircle(Complex c1, Complex c2){
-//		double c1x = c1.re();
-//		double c1y = c1.im();
-//		double c2x = c2.re();
-//		double c2y = c2.im();
-//		double nx = ((1 + c1x * c1x + c1y * c1y) * c2y - (1 + c2x * c2x + c2y * c2y) * c1y) / 2 * (c1x * c2y - c2x * c1y);
-//		double ny = ((1 + c2x * c2x + c2y * c2y) * c1x - (1 + c1x * c1x + c1y * c1y) * c2x) / 2 * (c1x * c2y - c2x * c1y);
-//		double rad = Math.sqrt(nx*nx + ny*ny -1);
-//		return new Circle(new Complex(nx, ny), rad);
-//	}
 	
 	public void draw(Graphics g, double expansion){
 		g.drawOval((int) ((center.re() -rad) * expansion), (int) ((center.im() -rad) * expansion),(int) (2 * rad * expansion), (int) (2 * rad * expansion));
@@ -333,7 +307,7 @@ public class CommonCircle {
 		}
 	}
 	
-	private void recalcA(double mouseX, double mouseY, double expansion){
+	public void recalcA(double mouseX, double mouseY, double expansion){
 		Complex pqMidPoint = new Complex((p.re() + q.re())/2,(p.im() + q.im())/2);
 		Line pqMid = new Line(center, pqMidPoint);
 		a = new Complex(mouseX / expansion, pqMid.getY(mouseX / expansion));
