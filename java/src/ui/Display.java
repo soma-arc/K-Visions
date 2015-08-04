@@ -12,24 +12,37 @@ import midi.MidiHandler;
 
 public class Display extends JPanel{
 	protected Display(){
-		setMidiHandlers();
+		setModeChangeHandlers();
 		addComponentListener(new DisplayShownAdapter());
 	}
 	
 	protected class DisplayShownAdapter extends ComponentAdapter{
 		@Override
 		public void componentShown(ComponentEvent e){
-			setMidiHandlers();
-			requestFocus();
+			shown();
+		}
+		
+		@Override
+		public void componentHidden(ComponentEvent e){
+			hidden();
 		}
 	}
 	
-	private void setMidiHandlers(){
+	protected void shown(){
+		MidiHandler.clearMidiControlChangedListeners();	
+		setModeChangeHandlers();
+		requestFocus();
+	}
+	
+	protected void hidden(){
+	}
+
+	protected void setModeChangeHandlers(){
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_BACKWARD, new ChangeToSchottkyListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_FORWARD, new ChangeToOPTListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_STOP, new ChangeToParabolicListener());
 	}
-	
+
 	private class ChangeToSchottkyListener implements MidiControlChangedListener{
 		@Override
 		public void changed(int controlPort, float value) {
@@ -37,7 +50,7 @@ public class Display extends JPanel{
 				Launcher.changeDisplayMode(DisplayMode.SCHOTTKY);
 		}
 	}
-	
+
 	private class ChangeToOPTListener implements MidiControlChangedListener{
 		@Override
 		public void changed(int controlPort, float value) {
@@ -45,7 +58,7 @@ public class Display extends JPanel{
 				Launcher.changeDisplayMode(DisplayMode.OPT);
 		}
 	}
-	
+
 	private class ChangeToParabolicListener implements MidiControlChangedListener{
 		@Override
 		public void changed(int controlPort, float value) {

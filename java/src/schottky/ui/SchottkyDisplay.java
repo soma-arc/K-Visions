@@ -58,6 +58,7 @@ public class SchottkyDisplay extends Display{
 	private double rotation = 0.0;
 	private boolean isRotating = false;
 	private boolean traceLocus = false;
+
 	private SchottkyDisplay(){
 		super();
 		c1 = new Circle(new Complex(-2, -2), 1);
@@ -72,6 +73,14 @@ public class SchottkyDisplay extends Display{
 		setFocusable(true);
 		requestFocusInWindow();
 		commonCircle.calcContactCircles();
+		
+		shown();
+		recalcCircles();
+	}
+	
+	@Override
+	protected void shown(){
+		super.shown();
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB1, new InitialHueTweakListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB2, new HueStepTweakListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.SLIDER1, new MagnificationTweakListener());
@@ -81,11 +90,15 @@ public class SchottkyDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB6, new LocusTraceLevelTweakListener());
 		
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M1, new ToggleTraceLocusListener());
-		
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S1, new ToggleRotateListener());
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 10);
-		recalcCircles();
+	}
+	
+	@Override
+	protected void hidden(){
+		if(timer != null)
+			timer.cancel();
 	}
 	
 	private class MaxLevelTweakListener implements MidiControlChangedListener{
@@ -180,7 +193,8 @@ public class SchottkyDisplay extends Display{
 	public static SchottkyDisplay getInstance(){
 		return instance;
 	}
-	int locusIndex = 0;
+
+	private int locusIndex = 0;
 	private double magnification = 1;
 	private float initialHue = 0.0f;
 	private float hueStep = 0.1f;
