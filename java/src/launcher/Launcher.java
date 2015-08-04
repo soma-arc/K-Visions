@@ -1,16 +1,22 @@
 package launcher;
 
 import java.awt.CardLayout;
+import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.event.ComponentListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.image.BufferedImage;
 
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import java.awt.Color;
 
 import osc.OSCHandler;
 import midi.MidiHandler;
@@ -51,6 +57,15 @@ public class Launcher {
 		cardPanel.add(SchottkyDisplay.getInstance(), DisplayMode.SCHOTTKY.name());
 		cardPanel.add(OPTDisplay.getInstance(), DisplayMode.OPT.name());
 		cardPanel.add(ParabolicCommutatorGroupsDisplay.getInstance(), DisplayMode.PARABOLIC.name());
+		BufferedImage image = new BufferedImage(64,64,  
+                BufferedImage.TYPE_4BYTE_ABGR);  
+		Graphics2D g2 = image.createGraphics();  
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setColor(Color.white);     
+		g2.fillOval(0,0, 8,8); 
+		g2.dispose();  
+		cardPanel.setCursor(Toolkit.getDefaultToolkit().createCustomCursor(  
+				image, new Point(4,4), "null_cursor")); 
 		frame.setVisible(true);
 		MidiHandler.listenStart();
 	}
