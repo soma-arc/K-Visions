@@ -39,6 +39,7 @@ public class OPTLimitSetExplorer {
 	
 	public ArrayList<Complex> run(int maxLevel, double epsilon){
 		init(maxLevel);
+		pointsList.add(Complex.ZERO);
 		do{
 			while(branchTermination(maxLevel, epsilon) == false){
 				goForward();
@@ -48,8 +49,36 @@ public class OPTLimitSetExplorer {
 			}while(level != 0 && isAvailableTurn() == false);
 			turnAndGoForward();
 		}while(level != 1 || tags[1] != 0);
+		pointsList.add(Complex.ONE);
 		return pointsList;
 	}
+	
+	public ArrayList<Complex> run(int maxLevel, double epsilon, long timeOutMillis){
+		init(maxLevel);
+		pointsList.add(Complex.ZERO);
+		long pre = System.currentTimeMillis();
+		outer:{
+			do{
+				while(branchTermination(maxLevel, epsilon) == false){
+					goForward();
+					if(getElapsedTime(pre) > timeOutMillis) break outer;
+				}
+				do{
+					goBackward();
+					if(getElapsedTime(pre) > timeOutMillis) break outer;
+				}while(level != 0 && isAvailableTurn() == false);
+				turnAndGoForward();
+				if(getElapsedTime(pre) > timeOutMillis) break outer;
+			}while(level != 1 || tags[1] != 0);
+		}
+		pointsList.add(Complex.ONE);
+		return pointsList;
+	}
+	
+	private long getElapsedTime(long previousMillis){
+		return System.currentTimeMillis() - previousMillis;
+	}
+	
 	
 	private void goForward(){
 		level++;

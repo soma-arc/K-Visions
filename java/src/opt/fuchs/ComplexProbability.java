@@ -4,7 +4,13 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+
+import javax.imageio.ImageIO;
 
 import opt.figure.Circle;
 import group.SL2C;
@@ -27,6 +33,14 @@ public class ComplexProbability {
 		this.a2 = a2;
 		this.a0 = Complex.ONE.sub(a1).sub(a2);
 		setData();
+	}
+	
+	public Complex getQ(){
+		return q0;
+	}
+	
+	public Complex getR(){
+		return r0;
 	}
 	
 	public void setQ(Complex Q){
@@ -244,7 +258,7 @@ public class ComplexProbability {
 	public void drawControlPoints(Graphics2D g2, double magnification, int width, int height){
 		AffineTransform af = AffineTransform.getTranslateInstance(width/2 , height/2);
 		g2.setTransform(af);
-		g2.setColor(Color.ORANGE);
+		g2.setColor(Color.gray);
 		cQ0.drawCenter(g2, magnification);
 		cR0.drawCenter(g2, magnification);
 		g2.setTransform(new AffineTransform());
@@ -333,14 +347,14 @@ public class ComplexProbability {
 	}
 
 	public boolean isClickedQ(double mouseX, double mouseY, double magnification){
-		if(q0.mult(magnification).dist(new Complex(mouseX, mouseY)) < Circle.CENTER_POINT_R){
+		if(q0.mult(magnification).dist(new Complex(mouseX, mouseY)) < Circle.CLICK_RANGE_R){
 			return true;
 		}
 		return false;
 	}
 
 	public boolean isClickedR(double mouseX, double mouseY, double magnification){
-		if(r0.mult(magnification).dist(new Complex(mouseX, mouseY)) < Circle.CENTER_POINT_R){
+		if(r0.mult(magnification).dist(new Complex(mouseX, mouseY)) < Circle.CLICK_RANGE_R){
 			return true;
 		}
 		return false;

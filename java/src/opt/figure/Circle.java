@@ -3,13 +3,18 @@ package opt.figure;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.File;
+
+import javax.imageio.ImageIO;
 
 import number.Complex;
 
 public class Circle {
 	private Complex center;
 	private double r;
-	public static final int CENTER_POINT_R = 5;
+	public static final int CENTER_POINT_R = 3;
+	public static final int CLICK_RANGE_R = 10;
 	
 	public Circle(Complex center, double r){
 		this.center = center;
