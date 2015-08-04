@@ -18,6 +18,8 @@ import java.util.TimerTask;
 
 import javax.swing.JPanel;
 
+import osc.OSCHandler;
+import osc.OSCReceivedAction;
 import launcher.Launcher;
 import midi.KorgNanoControl2;
 import midi.MidiControlChangedListener;
@@ -80,7 +82,7 @@ public class OPTDisplay extends Display{
 		Complex a1 = new Complex(0.25, 0);
 		Complex a2 = new Complex(0.25, 0);
 		cp = new ComplexProbability(a1, a2, Complex.ZERO);
-		cp.moveQ(new Complex(0, 0.3));
+		cp.moveQ(new Complex(0, 0.0));
 		baseQ = cp.getQ();
 		baseR = cp.getR();
 		
@@ -108,6 +110,17 @@ public class OPTDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB5, new TweakQXListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.SLIDER6, new TweakRYListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB6, new TweakRXListener());
+		
+		OSCHandler.setLoudAction(new OSCReceivedAction() {
+			@Override
+			public void doAction(Object[] values) {
+				float value = (float) values[0];
+				System.out.println(value);
+				cp.setQ(baseQ.add(new Complex(tweakedQX, value)));
+				recalcLimitSet();
+				repaint();
+			}
+		});
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 10);
 	}
@@ -430,21 +443,29 @@ public class OPTDisplay extends Display{
 				repaint();
 				return;
 			}else if(keyChar == 'w'){
-				cp.moveQ(new Complex(0, -paramStep));
+				baseQ = baseQ.add(new Complex(0, -paramStep));
+				cp.setQ(baseQ.add(new Complex(tweakedQX, tweakedQY)));
 			}else if(keyChar == 's'){
-				cp.moveQ(new Complex(0, paramStep));
+				baseQ = baseQ.add(new Complex(0, paramStep));
+				cp.setQ(baseQ.add(new Complex(tweakedQX, tweakedQY)));
 			}else if(keyChar == 'd'){
-				cp.moveQ(new Complex(paramStep, 0));
+				baseQ = baseQ.add(new Complex(paramStep, 0));
+				cp.setQ(baseQ.add(new Complex(tweakedQX, tweakedQY)));
 			}else if(keyChar == 'a'){
-				cp.moveQ(new Complex(-paramStep, 0));
+				baseQ = baseQ.add(new Complex(-paramStep, 0));
+				cp.setQ(baseQ.add(new Complex(tweakedQX, tweakedQY)));				
 			}else if(keyChar == 'i'){
-				cp.moveR(new Complex(0, -paramStep));
+				baseR = baseR.add(new Complex(0, -paramStep));
+				cp.setR(baseR.add(new Complex(tweakedRX, tweakedRY)));
 			}else if(keyChar == 'k'){
-				cp.moveR(new Complex(0, paramStep));
+				baseR = baseR.add(new Complex(0, paramStep));
+				cp.setR(baseR.add(new Complex(tweakedRX, tweakedRY)));
 			}else if(keyChar == 'l'){
-				cp.moveR(new Complex(paramStep, 0));
+				baseR = baseR.add(new Complex(paramStep, 0));
+				cp.setR(baseR.add(new Complex(tweakedRX, tweakedRY)));
 			}else if(keyChar == 'j'){
-				cp.moveR(new Complex(-paramStep, 0));
+				baseR = baseR.add(new Complex(-paramStep, 0));
+				cp.setR(baseR.add(new Complex(tweakedRX, tweakedRY)));
 			}
 			recalcLimitSet();
 //			discriminator.discriminate();

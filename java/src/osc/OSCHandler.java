@@ -9,6 +9,8 @@ import com.illposed.osc.OSCPortIn;
 public class OSCHandler {
 	private static OSCHandler instance = new OSCHandler(9000);
 	private static OSCPortIn receiver;
+	private static OSCReceivedAction loudAction = null;
+	
 	public OSCHandler(int port){
 		receiver = null;
 		try {
@@ -18,26 +20,17 @@ public class OSCHandler {
 		}
 		OSCListener loudListener = new OSCListener() {
 			public void acceptMessage(java.util.Date time, OSCMessage message) {
-				System.out.println("loud received!");
-				System.out.println(message.getAddress());
-				for(Object ob : message.getArguments()){
-					System.out.println((float) ob);
+				if(loudAction != null){
+					loudAction.doAction(message.getArguments());
 				}
-			}
-		};
-		OSCListener fftlistener = new OSCListener() {
-			public void acceptMessage(java.util.Date time, OSCMessage message) {
-				System.out.println("FFT received!");
-				System.out.println(message.getAddress());
-				for(Object ob : message.getArguments()){
-					System.out.println((float) ob);
-				}
-				
 			}
 		};
 		receiver.addListener("/audio/loud", loudListener);
-		receiver.addListener("/audio/attack", fftlistener);
 		receiver.startListening();
+	}
+	
+	public static void setLoudAction(OSCReceivedAction loudAction){
+		OSCHandler.loudAction = loudAction;
 	}
 	
 	public static OSCHandler getInstance(){
