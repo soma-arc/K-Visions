@@ -28,7 +28,7 @@ import explorer.TransformationExplorer;
 import generator.Recipe;
 import group.SL2C;
 
-public class ParabolicCommutatorGroupsDisplay extends JPanel{
+public class ParabolicCommutatorGroupsDisplay extends Display{
 	private static ParabolicCommutatorGroupsDisplay instance = new ParabolicCommutatorGroupsDisplay();
 	private ArrayList<Complex> points = new ArrayList<>();
 	private double limitSetMagnification = 300;
@@ -49,6 +49,7 @@ public class ParabolicCommutatorGroupsDisplay extends JPanel{
 	private double rotation = 0;
 	
 	private ParabolicCommutatorGroupsDisplay(){
+		super();
 		t_a = new Complex(-2, 0.0);
 		t_b = new Complex(-2, 0.0);
 		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, isT_abPlus);

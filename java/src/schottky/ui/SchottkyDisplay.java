@@ -36,9 +36,10 @@ import schottky.figure.CommonCircle;
 import schottky.figure.SelectedCircleElement;
 import schottky.figure.SelectedCommonCircleElement;
 import schottky.twinCircles.TwinCircles;
+import ui.Display;
 import number.Complex;
 
-public class SchottkyDisplay extends JPanel{
+public class SchottkyDisplay extends Display{
 	private static SchottkyDisplay instance = new SchottkyDisplay();
 	
 	private Timer timer;
@@ -58,6 +59,7 @@ public class SchottkyDisplay extends JPanel{
 	private boolean isRotating = false;
 	private boolean traceLocus = false;
 	private SchottkyDisplay(){
+		super();
 		c1 = new Circle(new Complex(-2, -2), 1);
 		c2 = new Circle(new Complex(1, 0), 0.6);
 		c3 = new Circle(new Complex(1.2, -2), 1);
@@ -191,7 +193,7 @@ public class SchottkyDisplay extends JPanel{
 		g2.setColor(Color.BLACK);
 		g2.fillRect(0, 0, this.getWidth(), this.getHeight());
 
-		if(traceLocus){
+		if(traceLocus && circlesList.size() >= traceLocusLevel){
 			ArrayList<Circle> list = circlesList.get(traceLocusLevel);
 
 			Circle ci = list.get(locusIndex);
@@ -318,6 +320,8 @@ public class SchottkyDisplay extends JPanel{
 			}else if(e.getKeyCode() == KeyEvent.VK_N){
 				initialHue -= 0.1;
 				repaint();
+			}else if(e.getKeyCode() == KeyEvent.VK_C){
+				Launcher.nextCard();
 			}else if(e.getKeyCode() == KeyEvent.VK_ESCAPE){
 				Launcher.setWindowMode();
 			}else if(e.getKeyCode() == KeyEvent.VK_Q){
@@ -344,6 +348,7 @@ public class SchottkyDisplay extends JPanel{
 				}
 			});
 		}
-		locusIndex = 0;
+		if(locusIndex >= list.size())
+			locusIndex = 0;
 	}
 }

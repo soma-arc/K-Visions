@@ -16,12 +16,14 @@ import java.util.ArrayList;
 
 import javax.swing.JPanel;
 
+import launcher.Launcher;
 import opt.discriminator.DiscretenessDiscriminator;
 import opt.explorer.OPTLimitSetExplorer;
 import opt.fuchs.ComplexProbability;
+import ui.Display;
 import number.Complex;
 
-public class OPTDisplay extends JPanel{
+public class OPTDisplay extends Display{
 	private static OPTDisplay instance = new OPTDisplay();
 	private ComplexProbability cp, cp2;
 
@@ -50,6 +52,7 @@ public class OPTDisplay extends JPanel{
 	private boolean drawTriangles = false;
 
 	private OPTDisplay(){
+		super();
 		Complex a1 = new Complex(0.25, 0);
 		Complex a2 = new Complex(0.25, 0);
 		cp = new ComplexProbability(a1, a2, Complex.ZERO);
@@ -81,7 +84,7 @@ public class OPTDisplay extends JPanel{
 		AffineTransform originAf = AffineTransform.getTranslateInstance(getWidth() / 2, getHeight() / 2);
 		g2.setTransform(originAf);
 		drawLimitSet(g2);
-		cp.drawTriangles(g2, magnification, getWidth(), getHeight());
+//		cp.drawTriangles(g2, magnification, getWidth(), getHeight());
 
 		if(drawIsometricCircles){
 			cp.drawCircles(g2, magnification, getWidth(), getHeight());
@@ -220,7 +223,7 @@ public class OPTDisplay extends JPanel{
 			}
 			recalcLimitSet();
 			discriminator.discriminate();
-			
+
 			repaint();
 		}
 	}
