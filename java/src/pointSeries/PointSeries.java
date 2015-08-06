@@ -1,5 +1,6 @@
 package pointSeries;
 
+
 import group.SL2C;
 
 import java.awt.Color;
@@ -11,9 +12,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-
-
-
 import mobius.Mobius;
 import number.Complex;
 
@@ -24,9 +22,18 @@ public class PointSeries {
 	public Complex translation = Complex.ZERO;
 	public Complex upperLeft, lowerRight;
 	public double width, height;
+	public SL2C prevRotation = SL2C.UNIT;
 
 	public PointSeries(ArrayList<Complex> points){
 		this.points = points;
+		calcBounds();
+	}
+	
+	public PointSeries(ArrayList<Complex> points, double scale, Complex translation, SL2C prevRotation){
+		this.points = points;
+		this.scale = scale;
+		this.translation = translation;
+		this.prevRotation = prevRotation;
 		calcBounds();
 	}
 	
@@ -53,6 +60,22 @@ public class PointSeries {
 		g.fillPolygon(x, y, points.size());
 	}
 	
+	public void draw(Graphics g, double magnification, double rad){
+		SL2C rotation = new SL2C(new Complex(Math.cos(rad), Math.sin(rad)), Complex.ZERO, Complex.ZERO, Complex.ONE);
+
+		int[] x = new int[points.size() * 2];
+		int[] y = new int[points.size() * 2];
+		for(int i = 0 ; i < points.size() ; i++){
+			Complex point = points.get(i).sub(translation);
+			point = Mobius.onPoint(rotation, point);
+			point = point.add(translation);
+			
+			x[i] = (int)( point.re() * magnification);
+			y[i] = (int)( point.im() * magnification);
+		}
+		g.fillPolygon(x, y, points.size());
+	}
+	
 	public void drawBounds(Graphics g, double magnification){
 		g.setColor(Color.red);
 		g.drawRect((int) (upperLeft.re() * magnification), (int) (upperLeft.im() * magnification - height * magnification),
@@ -60,7 +83,7 @@ public class PointSeries {
 	}
 	
 	public PointSeries copy(){
-		return new PointSeries(points);
+		return new PointSeries(points, scale, translation, prevRotation);
 	}
 
 	public PointSeries transform(SL2C t){
@@ -89,6 +112,21 @@ public class PointSeries {
 			newPoints.add(point.add(translation));
 		}
 		points = newPoints;
+		calcBounds();
+		return this;
+	}
+	
+	public PointSeries rotate(double rad){
+		SL2C rotation = new SL2C(new Complex(Math.cos(rad), Math.sin(rad)), Complex.ZERO, Complex.ZERO, Complex.ONE);
+		ArrayList<Complex> newPoints = new ArrayList<>();
+		for(Complex point : points){
+			point = point.sub(translation).div(new Complex(scale));
+			point = Mobius.onPoint(prevRotation.inverse(), point);
+			
+			newPoints.add(Mobius.onPoint(rotation, point).mult(scale).add(translation));
+		}
+		points = newPoints;
+		this.prevRotation = rotation;
 		calcBounds();
 		return this;
 	}

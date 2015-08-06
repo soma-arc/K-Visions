@@ -40,7 +40,7 @@ public class OPTDisplay extends Display{
 	private boolean isDraggingR = false;
 
 	private int maxLevel = 30;
-	private double epsilon = 0.0019;
+	private double epsilon = 0.002;
 	private static final double EPSILON_STEP = 0.0001;
 	private ArrayList<Complex> points = new ArrayList<>();
 	private OPTLimitSetExplorer dfs;
@@ -111,16 +111,7 @@ public class OPTDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.SLIDER6, new TweakRYListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB6, new TweakRXListener());
 		
-		OSCHandler.setLoudAction(new OSCReceivedAction() {
-			@Override
-			public void doAction(Object[] values) {
-				float value = (float) values[0];
-				System.out.println(value);
-				cp.setQ(baseQ.add(new Complex(tweakedQX, value)));
-				recalcLimitSet();
-				repaint();
-			}
-		});
+		OSCHandler.setLoudAction(new OSCLoudAction());
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 10);
 	}
@@ -130,6 +121,16 @@ public class OPTDisplay extends Display{
 		super.hidden();
 		if(timer != null)
 			timer.cancel();
+	}
+	
+	private class OSCLoudAction implements OSCReceivedAction{
+		@Override
+		public void doAction(Object[] values) {
+			float value = (float) values[0];
+			cp.setQ(baseQ.add(new Complex(tweakedQX/2, value)));
+			recalcLimitSet();
+			repaint();
+		}
 	}
 	
 	private class AnimationTask extends TimerTask{
