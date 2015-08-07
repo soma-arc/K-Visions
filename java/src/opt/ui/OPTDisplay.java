@@ -78,11 +78,26 @@ public class OPTDisplay extends Display{
 		discriminator = new DiscretenessDiscriminator(cp);
 	}
 	
+	private class Parameter{
+		private double magnification = 500;
+		private boolean isDraggingQ = false;
+		private boolean isDraggingR = false;
+
+		private int maxLevel = 30;
+		private double epsilon = 0.002;
+		private ComplexProbability cp;
+		private Complex baseQ, baseR;
+		
+		private float initialHue = 0.0f;
+		private float hueStep = 0.00001f;
+		private int cyclicStep = 2;
+	}
+	
 	private void init(){
 		Complex a1 = new Complex(0.25, 0);
 		Complex a2 = new Complex(0.25, 0);
 		cp = new ComplexProbability(a1, a2, Complex.ZERO);
-		cp.moveQ(new Complex(0, 0.0));
+		cp.moveQ(new Complex(0, 0.3));
 		baseQ = cp.getQ();
 		baseR = cp.getR();
 		
@@ -110,6 +125,9 @@ public class OPTDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB5, new TweakQXListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.SLIDER6, new TweakRYListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB6, new TweakRXListener());
+		
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S2, new CycleStepUpListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M2, new CycleStepDownListener());
 		
 		OSCHandler.setLoudAction(new OSCLoudAction());
 		timer = new Timer();
@@ -140,6 +158,24 @@ public class OPTDisplay extends Display{
 				rotation += 0.5;
 				repaint();
 			}
+		}
+	}
+	
+	private class CycleStepUpListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127)
+				cycleStep+=2;
+			repaint();
+		}
+	}
+	
+	private class CycleStepDownListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127 && cycleStep > 3)
+				cycleStep-=2;
+			repaint();
 		}
 	}
 	
@@ -275,7 +311,7 @@ public class OPTDisplay extends Display{
 		return instance;
 	}
 
-	int cycleStep = 8;
+	private int cycleStep = 2;
 	public void paintComponent(Graphics g){
 		Graphics2D g2 = (Graphics2D) g;
 		g.setColor(Color.black);
@@ -345,7 +381,7 @@ public class OPTDisplay extends Display{
 					Complex point2 = points.get(i+1);
 
 					g2.drawLine((int) ((point.re() + n) * magnification), (int) ((point.im()) * magnification),
-							(int) ((point2.re() + n) * magnification), (int) ((point2.im() ) * magnification));
+								(int) ((point2.re() + n) * magnification), (int) ((point2.im() ) * magnification));
 
 					hue += hueStep;
 				}

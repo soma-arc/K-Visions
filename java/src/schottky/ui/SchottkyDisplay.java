@@ -44,28 +44,19 @@ public class SchottkyDisplay extends Display{
 	
 	private Timer timer;
 	private ArrayList<Complex> points = new ArrayList<Complex>();
-	//private ArrayList<ArrayList<Circle>> circles = new ArrayList<ArrayList<Circle>>();
 	private ArrayList<Circle> circles = new ArrayList<Circle>();
 	private Circle selectedCircle = null;
 	private SelectedCircleElement selectedCircleElem = null;
-	private Circle c1, c2, c3, c4;
-	private TwinCircles tc1, tc2;
-	private ArrayList<ArrayList<Circle>> results = new ArrayList<ArrayList<Circle>>();
 	private CommonCircle commonCircle;
 	private SelectedCommonCircleElement selectedCommonCircleElem = null;
 	private int maxLevel = 10;
 	private double epsilon = 0.02;
 	private double rotation = 0.0;
-	private boolean isRotating = false;
+	private boolean isRotating = true;
 	private boolean traceLocus = false;
 
 	private SchottkyDisplay(){
 		super();
-		c1 = new Circle(new Complex(-2, -2), 1);
-		c2 = new Circle(new Complex(1, 0), 0.6);
-		c3 = new Circle(new Complex(1.2, -2), 1);
-		c4 = new Circle(new Complex(-1.1, 1), 0.8);
-
 		commonCircle = new CommonCircle(Complex.ZERO, 100);
 		addKeyListener(new KeyPressedAdapter());
 		addMouseListener(new MousePressedAdapter());
@@ -78,6 +69,20 @@ public class SchottkyDisplay extends Display{
 		recalcCircles();
 	}
 	
+	private void init(){
+		commonCircle = new CommonCircle(Complex.ZERO, 100);
+		commonCircle.calcContactCircles();
+		
+		maxLevel = 10;
+		rotation = 0.0;
+		isRotating = true;
+		traceLocus = false;
+		rotationStep = 0.01;
+		magnification = 1;
+		
+		recalcCircles();
+	}
+	
 	@Override
 	protected void shown(){
 		super.shown();
@@ -85,12 +90,14 @@ public class SchottkyDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB2, new HueStepTweakListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.SLIDER1, new MagnificationTweakListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB3, new RotationTweakListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.SLIDER3 , new RotationStepTweakListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB4, new PointATweakListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB5, new MaxLevelTweakListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB6, new LocusTraceLevelTweakListener());
 		
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M1, new ToggleTraceLocusListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S1, new ToggleRotateListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_SET, new InitButtonListaner());
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 10);
 	}
@@ -99,6 +106,77 @@ public class SchottkyDisplay extends Display{
 	protected void hidden(){
 		if(timer != null)
 			timer.cancel();
+	}
+	private int traceLocusLevel = 5;
+	private class Parameter{
+		private int traceLocusLevel = 5;
+		private int maxLevel = 10;
+		private double magnification = 1;
+		private float initialHue = 0.0f;
+		private float hueStep = 0.1f;
+		private double rotationStep = 0.01;
+		private double rotation = 0.0;
+		private boolean isRotating = true;
+		private boolean traceLocus = false;
+
+		private Complex p, q, r, s;
+		
+		public Parameter traceLocusLevel(int traceLocusLevel){
+			this.traceLocusLevel = traceLocusLevel;
+			return this;
+		}
+		
+		public Parameter maxLevel(int maxLevel){
+			this.maxLevel = maxLevel;
+			return this;
+		}
+		
+		public Parameter magnification(double magnification){
+			this.magnification = magnification;
+			return this;
+		}
+		
+		public Parameter initialHue(float initialHue){
+			this.initialHue = initialHue;
+			return this;
+		}
+		
+		public Parameter hueStep(float hueStep){
+			this.hueStep = hueStep;
+			return this;
+		}
+		
+		public Parameter rotationStep(double rotationStep){
+			this.rotationStep = rotationStep;
+			return this;
+		}
+		
+		public Parameter rotation(double rotation){
+			this.rotation = rotation;
+			return this;
+		}
+		
+		public Parameter isRotating(boolean isRotating){
+			this.isRotating = isRotating;
+			return this;
+		}
+		
+		public Parameter traceLocus(boolean traceLocus){
+			this.traceLocus = traceLocus;
+			return this;
+		}
+		
+		public void change(){
+			SchottkyDisplay.this.maxLevel = maxLevel;
+			SchottkyDisplay.this.hueStep = hueStep;
+			SchottkyDisplay.this.initialHue = initialHue;
+			SchottkyDisplay.this.magnification = magnification;
+			SchottkyDisplay.this.rotationStep = rotationStep;
+			SchottkyDisplay.this.isRotating = isRotating;
+			SchottkyDisplay.this.rotation = rotation;
+			SchottkyDisplay.this.traceLocus = traceLocus;
+			SchottkyDisplay.this.traceLocusLevel = traceLocusLevel;
+		}
 	}
 	
 	private class MaxLevelTweakListener implements MidiControlChangedListener{
@@ -148,7 +226,7 @@ public class SchottkyDisplay extends Display{
 	private class MagnificationTweakListener implements MidiControlChangedListener{
 		@Override
 		public void changed(int controlPort, float value) {
-			magnification = 0.1 + value/4;
+			magnification = 0.5 + value/4;
 			recalcCircles();
 			repaint();
 		}
@@ -158,6 +236,14 @@ public class SchottkyDisplay extends Display{
 		@Override
 		public void changed(int controlPort, float value) {
 			rotation = value/4;
+			repaint();
+		}
+	}
+	
+	private class RotationStepTweakListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			rotationStep = 0.01 + value / 100;
 			repaint();
 		}
 	}
@@ -178,12 +264,21 @@ public class SchottkyDisplay extends Display{
 		}
 	}
 	
+	private class InitButtonListaner implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127)
+				init();
+		}
+	}
+	
+	private double rotationStep = 0.01;
 	private class AnimationTask extends TimerTask{
 		@Override
 		public void run() {
 			if(isRotating || traceLocus){
 				if(isRotating){
-					rotation += 0.5;
+					rotation += rotationStep;
 				}
 				repaint();
 			}
@@ -222,7 +317,9 @@ public class SchottkyDisplay extends Display{
 
 		float hue = initialHue;
 		for(ArrayList<Circle> circles : circlesList){
-			g.setColor(Color.getHSBColor(hue, 1.0f, 1.0f));
+			Color cc = new Color(Color.HSBtoRGB(hue, 1.0f, 1.0f));
+			Color c2 = new Color(cc.getRed(), cc.getGreen(), cc.getBlue(), 230);
+			g.setColor(c2);
 			hue += hueStep;
 			for(Circle c : circles){
 				c.draw(g, magnification);
@@ -267,17 +364,7 @@ public class SchottkyDisplay extends Display{
 			commonCircle.mouseDragged(mouseX, mouseY, magnification);
 			
 			if(selectedCircle != null){
-				if(selectedCircleElem == SelectedCircleElement.CENTER){
-					double nx = mouseX / magnification;
-					double ny = mouseY / magnification;
-					double diffX = nx - prevCenter.re();
-					double diffY = ny - prevCenter.im();
-					prevCenter = new Complex(nx, ny);
-					selectedCircle.setCenter(new Complex(nx, ny));
-					selectedCircle.setP1(selectedCircle.getP1().add(new Complex(diffX, diffY)));
-					selectedCircle.setP2(selectedCircle.getP2().add(new Complex(diffX, diffY)));
-					selectedCircle.setP3(selectedCircle.getP3().add(new Complex(diffX, diffY)));
-				}else if(selectedCircleElem == SelectedCircleElement.P1){
+				if(selectedCircleElem == SelectedCircleElement.P1){
 					double r = selectedCircle.getR();
 					double cX = selectedCircle.getCenter().re();
 					double cY = selectedCircle.getCenter().im();
@@ -344,14 +431,17 @@ public class SchottkyDisplay extends Display{
 		}
 	}
 	
-	int traceLocusLevel = 5;
 	private void recalcCircles(){
-		circlesList = commonCircle.runBFS(maxLevel, 1.0/magnification);
+		long pre = System.currentTimeMillis();
+		circlesList = commonCircle.runBFS(maxLevel, 1.0/magnification, 100);
 		if(maxLevel <= traceLocusLevel){
 			traceLocusLevel = circlesList.size() -1;
 		}
 
+//		System.out.println((System.currentTimeMillis() - pre) +"---"+ sum);
+
 		ArrayList<Circle> list = circlesList.get(circlesList.size() -1);
+		
 		if(list != null){
 			Collections.sort(list, new Comparator<Circle>(){
 				@Override

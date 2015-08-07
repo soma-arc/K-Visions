@@ -43,6 +43,32 @@ public class SchottkyExplorer {
 			}
 		}
 	}
+	
+	public void run(int maxLevel, double epsilon, double stopMillis){
+		init();
+		double previousMillis = System.currentTimeMillis();
+
+		outer:{
+			for(int level = 1 ; level < maxLevel ; level++){
+				if((System.currentTimeMillis() - previousMillis) > stopMillis) break outer;
+				circles.add(new ArrayList<Circle>());
+				for(Circle c : circles.get(level - 1)){
+					for(int i = 0 ; i < 4 ; i++){
+						if((System.currentTimeMillis() - previousMillis) > stopMillis) {
+							break outer;
+						}
+						if((c.getTag() + 2) % 4 == i ) continue;
+						Circle newCircle = Mobius.onCircle(gens[i], c);
+						if(newCircle.getR() < epsilon) continue;
+
+						newCircle.setTag(i);
+						circles.get(level).add(newCircle);
+						if(circles.get(level).size() > 1000) break outer;
+					}
+				}
+			}
+		}
+	}
 
 	public ArrayList<ArrayList<Circle>> getCircles(){
 		return circles;
