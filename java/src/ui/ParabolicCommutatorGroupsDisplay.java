@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+
 
 
 import midi.KorgNanoControl2;
@@ -179,8 +181,10 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		@Override
 		public void run() {
 			if(isClickedRightButton){
-				double mouseX = getMousePosition().getX();
-				double mouseY = getMousePosition().getY();
+				Point mouse = getMousePosition();
+				if(mouse == null) return;
+				double mouseX = mouse.getX();
+				double mouseY = mouse.getY();
 				Complex currentPos = new Complex(-(mouseX - getWidth() / 2), -(mouseY- getHeight() / 2));
 				limitSetTranslation = limitSetTranslation.add(currentPos.div(new Complex(2)));
 				repaint();
