@@ -56,7 +56,8 @@ public class SchottkyDisplay extends Display{
 	private double rotation = 0.0;
 	private boolean isRotating = true;
 	private boolean traceLocus = false;
-
+	private ArrayList<Parameter> params = new ArrayList<>();
+	
 	private SchottkyDisplay(){
 		super();
 		commonCircle = new CommonCircle(Complex.ZERO, 100);
@@ -67,9 +68,11 @@ public class SchottkyDisplay extends Display{
 		requestFocusInWindow();
 		commonCircle.calcContactCircles();
 		
-		shown();
+//		shown();
 		recalcCircles();
-		
+		params.add(new Parameter());
+		params.add(new Parameter().traceLocus(true).isRotating(false).traceLocusLevel(6).magnification(20.25));
+		params.add(new Parameter().magnification(5).rotationStep(0.5));
 //		changedFromParabolic();
 	}
 	
@@ -102,8 +105,14 @@ public class SchottkyDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M1, new ToggleTraceLocusListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S1, new ToggleRotateListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_SET, new InitButtonListaner());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_PREV, new ParamPrevButtonListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_NEXT, new ParamNextButtonListener());
 		
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_PREV_TRACK, new ChangeToOPTListener());
+		
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S2, new StartCircleLevelUpListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M2, new StartCircleLevelDownListener());
+	
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 10);
 	}
@@ -125,7 +134,7 @@ public class SchottkyDisplay extends Display{
 		private boolean isRotating = true;
 		private boolean traceLocus = false;
 
-		private Complex p, q, r, s;
+		private Complex a = null;
 		
 		public Parameter traceLocusLevel(int traceLocusLevel){
 			this.traceLocusLevel = traceLocusLevel;
@@ -172,6 +181,11 @@ public class SchottkyDisplay extends Display{
 			return this;
 		}
 		
+		public Parameter commonCircleA(Complex a){
+			this.a = a;
+			return this;
+		}
+		
 		public void change(){
 			SchottkyDisplay.this.maxLevel = maxLevel;
 			SchottkyDisplay.this.hueStep = hueStep;
@@ -182,6 +196,13 @@ public class SchottkyDisplay extends Display{
 			SchottkyDisplay.this.rotation = rotation;
 			SchottkyDisplay.this.traceLocus = traceLocus;
 			SchottkyDisplay.this.traceLocusLevel = traceLocusLevel;
+			
+			if(a!= null){
+				SchottkyDisplay.this.commonCircle.setA(a);
+				SchottkyDisplay.this.commonCircle.calcContactCircles();
+			}
+			
+			recalcCircles();
 		}
 	}
 	
@@ -299,6 +320,48 @@ public class SchottkyDisplay extends Display{
 		}
 	}
 	
+	private int paramIndex = 0;
+	private class ParamNextButtonListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127){
+				paramIndex = (paramIndex + 1) % params.size();
+				params.get(paramIndex).change();
+			}
+		}
+	}
+	
+	private class ParamPrevButtonListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127){
+				paramIndex--;
+				if(paramIndex == -1) paramIndex = params.size() -1;
+				params.get(paramIndex).change();
+			}
+		}
+	}
+	
+	private class StartCircleLevelUpListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127){
+				if(startCircleLevel < circlesList.size() -1)
+					startCircleLevel++;
+			}
+		}
+	}
+	
+	private class StartCircleLevelDownListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127){
+				if(startCircleLevel != 0)
+					startCircleLevel--;
+			}
+		}
+	}
+	
 	private double rotationStep = 0.01;
 	private class AnimationTask extends TimerTask{
 		@Override
@@ -323,6 +386,7 @@ public class SchottkyDisplay extends Display{
 	private ArrayList<ArrayList<Circle>> circlesList = new ArrayList<>();
 	private int changedCounter = 0;
 	private int changedStep = maxLevel;
+	private int startCircleLevel = 0;
 	public void paintComponent(Graphics g){
 		Graphics2D g2 = (Graphics2D)g;
 		  g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
@@ -331,9 +395,9 @@ public class SchottkyDisplay extends Display{
 		g2.setColor(Color.BLACK);
 		g2.fillRect(0, 0, this.getWidth(), this.getHeight());
 
-		if(traceLocus && circlesList.size() >= traceLocusLevel){
+		if(traceLocus && circlesList.size() > traceLocusLevel){
 			ArrayList<Circle> list = circlesList.get(traceLocusLevel);
-
+			if(locusIndex >= list.size()) locusIndex = 0;
 			Circle ci = list.get(locusIndex);
 			g2.translate(this.getWidth() / 2 + ci.getCenter().re() * magnification, this.getHeight() / 2 + ci.getCenter().im() * magnification);
 			locusIndex++;
@@ -357,7 +421,7 @@ public class SchottkyDisplay extends Display{
 				g2.setColor(Color.getHSBColor(hue, 1.0f, 1.0f));
 				g2.fillRect(-getWidth()/2, -getHeight() / 2 + step, getWidth(), getHeight()/2 - step);
 				g2.fillRect(-getWidth()/2, 0, getWidth(), getHeight()/2 - step);
-				step+=5;
+				step+=10;
 				if(step > getHeight()/2){
 					changeToOPT = false;
 					Launcher.changeDisplayMode(DisplayMode.OPT);
@@ -366,7 +430,19 @@ public class SchottkyDisplay extends Display{
 			}
 		}else{
 			g2.rotate(rotation);
-			drawCircles(g2);
+			if(startCircleLevel >= circlesList.size()) startCircleLevel = 0;
+			float hue = initialHue;
+			for(int i = startCircleLevel ; i < circlesList.size() ; i++){
+				ArrayList<Circle> circles = circlesList.get(i);
+				Color cc = new Color(Color.HSBtoRGB(hue, 1.0f, 1.0f));
+				Color c2 = new Color(cc.getRed(), cc.getGreen(), cc.getBlue(), 230);
+				g2.setColor(c2);
+				hue += hueStep;
+				for(Circle c : circles){
+					c.draw(g2, magnification);
+				}
+			}
+//			drawCircles(g2);
 		}
 	}
 	int step = 0;
