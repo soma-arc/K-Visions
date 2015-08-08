@@ -19,11 +19,15 @@ import java.util.TimerTask;
 
 
 
+
+
+import launcher.Launcher;
 import midi.KorgNanoControl2;
 import midi.MidiControlChangedListener;
 import midi.MidiHandler;
 import number.Complex;
 import pointSeries.PointSeries;
+import schottky.ui.SchottkyDisplay;
 import explorer.LimitSetExplorer;
 import explorer.TransformationExplorer;
 import generator.Recipe;
@@ -32,6 +36,8 @@ import group.SL2C;
 public class ParabolicCommutatorGroupsDisplay extends Display{
 	private static ParabolicCommutatorGroupsDisplay instance = new ParabolicCommutatorGroupsDisplay();
 	private ArrayList<Complex> points = new ArrayList<>();
+	private ArrayList<Complex> nextPoints = new ArrayList<>();
+	private Thread calcNextPointsThread = new Thread();
 	private double magnification = 300;
 	private int limitSetMaxLevel = 30;
 	private int pointSeriesMaxLevel = 2;
@@ -90,8 +96,7 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S2, new PointSeriesLevelUpListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M2, new PointSeriesLevelDownListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_SET, new InitButtonListener());
-		
-//		OSCHandler.setLoudAction(new OSCLoudAction());
+
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 100);
 	}
@@ -186,9 +191,27 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 				double mouseX = mouse.getX();
 				double mouseY = mouse.getY();
 				Complex currentPos = new Complex(-(mouseX - getWidth() / 2), -(mouseY- getHeight() / 2));
-				limitSetTranslation = limitSetTranslation.add(currentPos.div(new Complex(2)));
+				limitSetTranslation = limitSetTranslation.add(currentPos.div(new Complex(10)));
 				repaint();
 				return;
+			}
+
+			if(rootButterfly.upperLeft.re() > 5){
+				previousPos = new Complex(-5, rootButterfly.upperLeft.im());
+				rootButterfly.translate(new Complex(-10));
+				translation = new Complex(getWidth()/2 -5 * magnification, getHeight()/2 + rootButterfly.upperLeft.im() * magnification);
+
+				points = nextPoints;
+				if(t_a.re() < 3){
+					t_a = t_a.add(0.05);
+				}else if(t_a.re() < 3 && t_b.re() <3){
+					t_b = t_b.add(0.1);
+				}else{
+					operateButterfly = false;
+					Launcher.changeDisplayMode(DisplayMode.SCHOTTKY);
+					SchottkyDisplay.getInstance().changedFromParabolic();
+				}
+				calcNextPoints();
 			}
 		}
 	}
@@ -359,6 +382,14 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		recalcPointSeries();
 	}
 	
+	public void calcNextPoints(){
+		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, isT_abPlus);
+
+		if(calcNextPointsThread.isAlive()) return;
+		calcNextPointsThread = new Thread(new CalcNextLimitSetTask());
+		calcNextPointsThread.start();
+	}
+	
 	public void recalcPointSeries(){
 		if(rootButterfly == null) return;
 		if(pointSeriesDisplayMode == PointSeriesDisplayMode.SEARCH){
@@ -400,6 +431,18 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 				}
 			}
 			repaint();
+		}
+	}
+	
+	private class CalcNextLimitSetTask implements Runnable{
+		@Override
+		public void run(){
+			LimitSetExplorer lsExp = new LimitSetExplorer(gens);
+			try {
+				nextPoints = lsExp.runDFS(limitSetMaxLevel, threshold, calcLimitSetThread);
+			} catch (InterruptedException e) {
+				return;
+			}
 		}
 	}
 	

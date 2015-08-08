@@ -77,8 +77,6 @@ public class LimitSetExplorer {
 			}while(level != 0 && isAvailableTurn() == false);
 			turnAndGoForward();
 		}while(level != 1 || tags[1] != 0);
-		System.out.println((System.currentTimeMillis() - pre));
-		System.out.println(pointsList.size());
 		return pointsList;
 	}
 	

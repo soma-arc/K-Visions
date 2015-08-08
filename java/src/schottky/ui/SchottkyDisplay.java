@@ -49,7 +49,7 @@ public class SchottkyDisplay extends Display{
 	private SelectedCircleElement selectedCircleElem = null;
 	private CommonCircle commonCircle;
 	private SelectedCommonCircleElement selectedCommonCircleElem = null;
-	private int maxLevel = 10;
+	private int maxLevel = 15;
 	private double epsilon = 0.02;
 	private double rotation = 0.0;
 	private boolean isRotating = true;
@@ -67,6 +67,8 @@ public class SchottkyDisplay extends Display{
 		
 		shown();
 		recalcCircles();
+		
+		changedFromParabolic();
 	}
 	
 	private void init(){
@@ -177,6 +179,20 @@ public class SchottkyDisplay extends Display{
 			SchottkyDisplay.this.traceLocus = traceLocus;
 			SchottkyDisplay.this.traceLocusLevel = traceLocusLevel;
 		}
+	}
+	
+	
+	boolean changedFromParabolic = false;
+	
+	public void changedFromParabolic(){
+		changedFromParabolic = true;
+		commonCircle.setA(new Complex(-100, 100));
+		commonCircle.calcContactCircles();
+		recalcCircles();
+		points = commonCircle.runDFS(maxLevel, epsilon);
+		magnification = 3;
+//		this.initialHue = initialHue;
+//		this.hueStep = hueStep;
 	}
 	
 	private class MaxLevelTweakListener implements MidiControlChangedListener{
@@ -294,6 +310,8 @@ public class SchottkyDisplay extends Display{
 	private float initialHue = 0.0f;
 	private float hueStep = 0.1f;
 	private ArrayList<ArrayList<Circle>> circlesList = new ArrayList<>();
+	private int changedCounter = 0;
+	private int changedStep = maxLevel;
 	public void paintComponent(Graphics g){
 		Graphics2D g2 = (Graphics2D)g;
 		  g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
@@ -316,16 +334,51 @@ public class SchottkyDisplay extends Display{
 		g2.rotate(rotation);
 
 		float hue = initialHue;
-		for(ArrayList<Circle> circles : circlesList){
-			Color cc = new Color(Color.HSBtoRGB(hue, 1.0f, 1.0f));
-			Color c2 = new Color(cc.getRed(), cc.getGreen(), cc.getBlue(), 230);
-			g.setColor(c2);
-			hue += hueStep;
-			for(Circle c : circles){
-				c.draw(g, magnification);
+		if(changedFromParabolic){
+			for(int i = changedStep ; i < circlesList.size() ; i++){
+				ArrayList<Circle> circles = circlesList.get(i);
+				Color cc = new Color(Color.HSBtoRGB(hue, 1.0f, 1.0f));
+				Color c2 = new Color(cc.getRed(), cc.getGreen(), cc.getBlue(), 230);
+				g.setColor(c2);
+				hue += hueStep;
+				for(Circle c : circles){
+					c.draw(g, magnification);
+				}
+			}
+			drawLimitSet(g2);
+			changedCounter++;
+			if(changedCounter % 50 == 0){
+				if(changedStep != 0){
+					changedStep --;
+				}else{
+					changedFromParabolic = false;
+				}
+			}
+		}else{
+			for(ArrayList<Circle> circles : circlesList){
+				Color cc = new Color(Color.HSBtoRGB(hue, 1.0f, 1.0f));
+				Color c2 = new Color(cc.getRed(), cc.getGreen(), cc.getBlue(), 230);
+				g.setColor(c2);
+				hue += hueStep;
+				for(Circle c : circles){
+					c.draw(g, magnification);
+				}
 			}
 		}
-		
+	}
+	
+	private void drawLimitSet(Graphics2D g2){
+		float hue = initialHue;
+		for(int i = 0 ; i < points.size(); i+= 3){
+			g2.setColor(Color.getHSBColor(hue, 1.0f, 1.0f));
+			Complex point = points.get(i);
+			Complex point2 = points.get(i+1);
+			Complex point3 = points.get(i+2);
+			g2.drawLine((int) (point.re() * magnification), (int) (point.im() * magnification), (int) (point2.re() * magnification), (int) (point2.im() * magnification));
+			g2.drawLine((int) (point2.re() * magnification), (int) (point2.im() * magnification), (int) (point3.re() * magnification), (int) (point3.im() * magnification));
+
+			hue += hueStep;
+		}
 	}
 
 	private Complex prevCenter = null;

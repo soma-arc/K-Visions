@@ -69,6 +69,10 @@ public class SchottkyExplorer {
 			}
 		}
 	}
+	
+	public SL2C[] getGens(){
+		return gens;
+	}
 
 	public ArrayList<ArrayList<Circle>> getCircles(){
 		return circles;

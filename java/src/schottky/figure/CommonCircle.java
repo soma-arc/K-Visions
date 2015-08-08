@@ -1,5 +1,6 @@
 package schottky.figure;
 
+import explorer.LimitSetExplorer;
 import group.TwoGensGroup;
 
 import java.awt.Graphics;
@@ -68,6 +69,14 @@ public class CommonCircle {
 		this.rad = rad;
 	}
 	
+	public void setA(Complex a){
+		this.a = a;
+	}
+	
+	public Complex getA(){
+		return a;
+	}
+	
 	private TwinCircles tc1, tc2;
 	Circle[] contactCircles = new Circle[4];
 	public void calcContactCircles(){
@@ -128,6 +137,20 @@ public class CommonCircle {
 		SchottkyExplorer bfs = new SchottkyExplorer(g);
 		bfs.run(maxLevel, epsilon);
 		return bfs.getCircles();
+	}
+	
+	public ArrayList<ArrayList<Circle>> runBFS(int maxLevel, double epsilon, double stopMillis){
+		TwoGensGroup g = new TwoGensGroup(tc1, tc2);
+		SchottkyExplorer bfs = new SchottkyExplorer(g);
+		bfs.run(maxLevel, epsilon, stopMillis);
+		return bfs.getCircles();
+	}
+	
+	public ArrayList<Complex> runDFS(int maxLevel, double epsilon){
+		TwoGensGroup g = new TwoGensGroup(tc1, tc2);
+		SchottkyExplorer sh = new SchottkyExplorer(g);
+		LimitSetExplorer l = new LimitSetExplorer(sh.getGens());
+		return l.runDFS(maxLevel, epsilon);
 	}
 	
 	public void drawArrow(Graphics g, double expansion){
