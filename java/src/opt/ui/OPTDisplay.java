@@ -1,5 +1,7 @@
 package opt.ui;
 
+import group.SL2C;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -106,6 +108,11 @@ public class OPTDisplay extends Display{
 		maxLevel = 30;
 		epsilon = 0.0019;
 		
+		baseQIm = false;
+		baseQRe = false;
+		baseRIm = false;
+		baseRRe = false;
+		
 		recalcLimitSet();
 	}
 	
@@ -118,7 +125,7 @@ public class OPTDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB3, new RotationTweakListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB4, new MaxLevelListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S1, new ToggleRotateListener());
-		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M1, new ToggleCyclicButtonListener());
+//		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M1, new ToggleCyclicButtonListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_R1, new ToggleDrawWithPointListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_SET, new InitButtonListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.SLIDER5, new TweakQYListener());
@@ -128,6 +135,14 @@ public class OPTDisplay extends Display{
 		
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S2, new CycleStepUpListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M2, new CycleStepDownListener());
+		
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S7, new ToggleQReListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M7, new ToggleQImListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S8, new ToggleRReListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M8, new ToggleRImListener());
+		
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB8, new ValueMagnificationTweakListener());
+		
 		
 		OSCHandler.setLoudAction(new OSCLoudAction());
 		timer = new Timer();
@@ -141,16 +156,49 @@ public class OPTDisplay extends Display{
 			timer.cancel();
 	}
 	
+	private double valueMagnification = 0.5;
 	private boolean baseQIm = false;
+	private boolean baseQRe = false;
+	private boolean baseRIm = false;
+	private boolean baseRRe = false;
 	private class OSCLoudAction implements OSCReceivedAction{
 		@Override
 		public void doAction(Object[] values) {
 			float value = (float) values[0];
-			if(baseQIm){
-				cp.setQ(baseQ.add(new Complex(tweakedQX/2, value/2)));
+			if(baseQRe && baseQIm){
+				cp.setQ(baseQ.add(new Complex(value * valueMagnification, value * valueMagnification)));
+				recalcLimitSet();
+				repaint();
+			}else if(baseQIm){
+				cp.setQ(baseQ.add(new Complex(tweakedQX/2, value * valueMagnification)));
+				recalcLimitSet();
+				repaint();
+			}else if(baseQRe){
+				cp.setQ(baseQ.add(new Complex(value * valueMagnification, tweakedQY/2)));
 				recalcLimitSet();
 				repaint();
 			}
+			
+			if(baseRRe && baseRIm){
+				cp.setQ(baseR.add(new Complex(value * valueMagnification, value * valueMagnification)));
+				recalcLimitSet();
+				repaint();
+			}else if(baseRRe){
+				cp.setR(baseR.add(new Complex(value * valueMagnification, tweakedQY/2)));
+				recalcLimitSet();
+				repaint();
+			}else if(baseRIm){
+				cp.setR(baseR.add(new Complex(tweakedQX/2, value * valueMagnification)));
+				recalcLimitSet();
+				repaint();
+			}
+		}
+	}
+	
+	private class ValueMagnificationTweakListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			valueMagnification = value / 100.0;
 		}
 	}
 	
@@ -164,11 +212,43 @@ public class OPTDisplay extends Display{
 			}
 			if(changedFromSchottky){
 				count++;
-				if(count == 100){
+				if(count == 10){
 					changedFromSchottky = false;
 					baseQIm = true;
 				}
 			}
+		}
+	}
+	
+	private class ToggleQReListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127)
+				baseQRe = !baseQRe;
+		}
+	}
+	
+	private class ToggleQImListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127)
+				baseQIm = !baseQIm;
+		}
+	}
+	
+	private class ToggleRReListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127)
+				baseRRe = !baseRRe;
+		}
+	}
+	
+	private class ToggleRImListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127)
+				baseRIm = !baseRIm;
 		}
 	}
 	
@@ -328,7 +408,7 @@ public class OPTDisplay extends Display{
 		changedFromSchottky = true;
 	}
 
-	private int cycleStep = 2;
+	private int cycleStep = 0;
 	public void paintComponent(Graphics g){
 		Graphics2D g2 = (Graphics2D) g;
 		g.setColor(Color.black);
@@ -340,9 +420,7 @@ public class OPTDisplay extends Display{
 		AffineTransform originAf = AffineTransform.getTranslateInstance(getWidth() / 2, getHeight() / 2);
 		g2.setTransform(originAf);
 		
-//		for(int n = -1 ; n <= 1 ; n++){
-//		originAf.translate(n * magnification, 0);
-//		g2.setTransform(originAf);
+
 		g2.rotate(rotation);
 		if(cyclicDraw){
 			for(float r = 0 ; r <  Math.PI ; r += Math.PI/cycleStep){
@@ -352,9 +430,7 @@ public class OPTDisplay extends Display{
 		}else{
 			drawLimitSet(g2);
 		}
-		
-//		}
-//		cp.drawTriangles(g2, magnification, getWidth(), getHeight());
+
 
 		if(drawIsometricCircles){
 			cp.drawCircles(g2, magnification, getWidth(), getHeight());
@@ -442,6 +518,9 @@ public class OPTDisplay extends Display{
 	
 	private void recalcLimitSet(){
 		if(drawLimitSet){
+			for(SL2C gen : cp.getGens()){
+				if(gen == null) return;
+			}
 			dfs = new OPTLimitSetExplorer(cp.getGens());
 			points = dfs.run(maxLevel, epsilon, 100);
 		}
