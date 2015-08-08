@@ -41,6 +41,7 @@ public class Display extends JPanel{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_BACKWARD, new ChangeToSchottkyListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_FORWARD, new ChangeToOPTListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_STOP, new ChangeToParabolicListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_START, new ChangeToLoxodromic());
 	}
 
 	private class ChangeToSchottkyListener implements MidiControlChangedListener{
@@ -64,6 +65,14 @@ public class Display extends JPanel{
 		public void changed(int controlPort, float value) {
 			if(value == 127)
 				Launcher.changeDisplayMode(DisplayMode.PARABOLIC);
+		}
+	}
+	
+	private class ChangeToLoxodromic implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127)
+				Launcher.changeDisplayMode(DisplayMode.LOXODROMIC);
 		}
 	}
 }

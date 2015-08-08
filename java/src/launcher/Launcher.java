@@ -16,6 +16,7 @@ import java.awt.image.BufferedImage;
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+
 import java.awt.Color;
 
 import osc.OSCHandler;
@@ -24,6 +25,7 @@ import opt.ui.OPTDisplay;
 import schottky.ui.SchottkyDisplay;
 import ui.DisplayMode;
 import ui.ParabolicCommutatorGroupsDisplay;
+import ui.LoxodromicParticleDisplay;
 
 public class Launcher {
 
@@ -57,6 +59,7 @@ public class Launcher {
 		cardPanel.add(SchottkyDisplay.getInstance(), DisplayMode.SCHOTTKY.name());
 		cardPanel.add(OPTDisplay.getInstance(), DisplayMode.OPT.name());
 		cardPanel.add(ParabolicCommutatorGroupsDisplay.getInstance(), DisplayMode.PARABOLIC.name());
+		cardPanel.add(LoxodromicParticleDisplay.getInstance(), DisplayMode.LOXODROMIC.name());
 		BufferedImage image = new BufferedImage(64,64,  
                 BufferedImage.TYPE_4BYTE_ABGR);  
 		Graphics2D g2 = image.createGraphics();  

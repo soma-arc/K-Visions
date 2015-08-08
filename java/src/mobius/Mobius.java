@@ -107,4 +107,10 @@ public class Mobius {
 //		System.out.println(m2.inverse());
 		return m2.inverse().mult(m1);
 	}
+	
+	public static SL2C getLoxodromicTransformation(Complex fixA, Complex fixB, Complex lambda){
+		SL2C f = new SL2C(lambda, Complex.ZERO, Complex.ZERO, Complex.ONE.div(lambda));
+		SL2C g = new SL2C(Complex.ONE, fixA.mult(-1), Complex.ONE, fixB.mult(-1));
+		return g.inverse().mult(f).mult(g);
+	}
 }
