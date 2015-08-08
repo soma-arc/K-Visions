@@ -41,7 +41,7 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 	private double magnification = 300;
 	private int limitSetMaxLevel = 30;
 	private int pointSeriesMaxLevel = 2;
-	private double threshold = 0.004;
+	private double threshold = 0.005;
 	private SL2C[] gens;
 	private PointSeries rootButterfly = null;
 	private PointSeries stepButterfly, initialButterfly;
@@ -96,6 +96,7 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S2, new PointSeriesLevelUpListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M2, new PointSeriesLevelDownListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_SET, new InitButtonListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_PREV_TRACK, new ChangeToSchottkyListener());
 
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 100);
@@ -164,6 +165,16 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		}
 	}
 	
+	private class ChangeToSchottkyListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127){
+				Launcher.changeDisplayMode(DisplayMode.SCHOTTKY);
+				SchottkyDisplay.getInstance().changedFromParabolic();
+			}
+		}
+	}
+	
 	@Override
 	protected void hidden(){
 		super.hidden();
@@ -204,13 +215,15 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 				points = nextPoints;
 				if(t_a.re() < 3){
 					t_a = t_a.add(0.05);
-				}else if(t_a.re() < 3 && t_b.re() <3){
+				}else if(t_b.re() < 3){
 					t_b = t_b.add(0.1);
 				}else{
+					rootButterfly = initialButterfly.copy();
+					recalcPointSeries();
+					repaint();
 					operateButterfly = false;
-					Launcher.changeDisplayMode(DisplayMode.SCHOTTKY);
-					SchottkyDisplay.getInstance().changedFromParabolic();
 				}
+				System.out.println(t_a +"  "+ t_b);
 				calcNextPoints();
 			}
 		}

@@ -27,6 +27,7 @@ import java.util.TimerTask;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import opt.ui.OPTDisplay;
 import launcher.Launcher;
 import midi.KorgNanoControl2;
 import midi.MidiControlChangedListener;
@@ -37,6 +38,7 @@ import schottky.figure.SelectedCircleElement;
 import schottky.figure.SelectedCommonCircleElement;
 import schottky.twinCircles.TwinCircles;
 import ui.Display;
+import ui.DisplayMode;
 import number.Complex;
 
 public class SchottkyDisplay extends Display{
@@ -49,7 +51,7 @@ public class SchottkyDisplay extends Display{
 	private SelectedCircleElement selectedCircleElem = null;
 	private CommonCircle commonCircle;
 	private SelectedCommonCircleElement selectedCommonCircleElem = null;
-	private int maxLevel = 15;
+	private int maxLevel = 13;
 	private double epsilon = 0.02;
 	private double rotation = 0.0;
 	private boolean isRotating = true;
@@ -68,7 +70,7 @@ public class SchottkyDisplay extends Display{
 		shown();
 		recalcCircles();
 		
-		changedFromParabolic();
+//		changedFromParabolic();
 	}
 	
 	private void init(){
@@ -100,6 +102,8 @@ public class SchottkyDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M1, new ToggleTraceLocusListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S1, new ToggleRotateListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_SET, new InitButtonListaner());
+		
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_PREV_TRACK, new ChangeToOPTListener());
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 10);
 	}
@@ -183,6 +187,7 @@ public class SchottkyDisplay extends Display{
 	
 	
 	boolean changedFromParabolic = false;
+	boolean changeToOPT = false;
 	
 	public void changedFromParabolic(){
 		changedFromParabolic = true;
@@ -191,8 +196,6 @@ public class SchottkyDisplay extends Display{
 		recalcCircles();
 		points = commonCircle.runDFS(maxLevel, epsilon);
 		magnification = 3;
-//		this.initialHue = initialHue;
-//		this.hueStep = hueStep;
 	}
 	
 	private class MaxLevelTweakListener implements MidiControlChangedListener{
@@ -288,6 +291,14 @@ public class SchottkyDisplay extends Display{
 		}
 	}
 	
+	private class ChangeToOPTListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127)
+				changeToOPT = true;
+		}
+	}
+	
 	private double rotationStep = 0.01;
 	private class AnimationTask extends TimerTask{
 		@Override
@@ -331,38 +342,72 @@ public class SchottkyDisplay extends Display{
 			g2.translate(this.getWidth() / 2 , this.getHeight() / 2);
 		}
 
-		g2.rotate(rotation);
 
-		float hue = initialHue;
 		if(changedFromParabolic){
-			for(int i = changedStep ; i < circlesList.size() ; i++){
-				ArrayList<Circle> circles = circlesList.get(i);
-				Color cc = new Color(Color.HSBtoRGB(hue, 1.0f, 1.0f));
-				Color c2 = new Color(cc.getRed(), cc.getGreen(), cc.getBlue(), 230);
-				g.setColor(c2);
-				hue += hueStep;
-				for(Circle c : circles){
-					c.draw(g, magnification);
-				}
-			}
-			drawLimitSet(g2);
-			changedCounter++;
-			if(changedCounter % 50 == 0){
-				if(changedStep != 0){
-					changedStep --;
-				}else{
-					changedFromParabolic = false;
+			g2.rotate(rotation);
+			changedFromParabolicProcess(g2);
+		}else if(changeToOPT){
+			if(magnification < 180){
+				g2.rotate(rotation);
+				g2.translate(commonCircle.getA().re() * magnification, commonCircle.getA().im() * magnification);
+				changeToOPTProcess(g2);
+				magnification += 0.4;
+			}else{
+				float hue = initialHue;
+				g2.setColor(Color.getHSBColor(hue, 1.0f, 1.0f));
+				g2.fillRect(-getWidth()/2, -getHeight() / 2 + step, getWidth(), getHeight()/2 - step);
+				g2.fillRect(-getWidth()/2, 0, getWidth(), getHeight()/2 - step);
+				step+=5;
+				if(step > getHeight()/2){
+					changeToOPT = false;
+					Launcher.changeDisplayMode(DisplayMode.OPT);
+					OPTDisplay.getInstance().changedFromSchottky();
 				}
 			}
 		}else{
-			for(ArrayList<Circle> circles : circlesList){
-				Color cc = new Color(Color.HSBtoRGB(hue, 1.0f, 1.0f));
-				Color c2 = new Color(cc.getRed(), cc.getGreen(), cc.getBlue(), 230);
-				g.setColor(c2);
-				hue += hueStep;
-				for(Circle c : circles){
-					c.draw(g, magnification);
-				}
+			g2.rotate(rotation);
+			drawCircles(g2);
+		}
+	}
+	int step = 0;
+	
+	private void drawCircles(Graphics2D g2){
+		float hue = initialHue;
+		for(ArrayList<Circle> circles : circlesList){
+			Color cc = new Color(Color.HSBtoRGB(hue, 1.0f, 1.0f));
+			Color c2 = new Color(cc.getRed(), cc.getGreen(), cc.getBlue(), 230);
+			g2.setColor(c2);
+			hue += hueStep;
+			for(Circle c : circles){
+				c.draw(g2, magnification);
+			}
+		}
+	}
+	
+	private void changeToOPTProcess(Graphics2D g2){
+		drawCircles(g2);
+		
+	}
+	
+	private void changedFromParabolicProcess(Graphics2D g2){
+		float hue = initialHue;
+		for(int i = changedStep ; i < circlesList.size() ; i++){
+			ArrayList<Circle> circles = circlesList.get(i);
+			Color cc = new Color(Color.HSBtoRGB(hue, 1.0f, 1.0f));
+			Color c2 = new Color(cc.getRed(), cc.getGreen(), cc.getBlue(), 230);
+			g2.setColor(c2);
+			hue += hueStep;
+			for(Circle c : circles){
+				c.draw(g2, magnification);
+			}
+		}
+		drawLimitSet(g2);
+		changedCounter++;
+		if(changedCounter % 50 == 0){
+			if(changedStep != 0){
+				changedStep --;
+			}else{
+				changedFromParabolic = false;
 			}
 		}
 	}

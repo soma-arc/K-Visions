@@ -62,7 +62,7 @@ public class OPTDisplay extends Display{
 	private Timer timer;
 	private double rotation = 0.0;
 	private boolean isRotating = false;
-	private boolean cyclicDraw = false;
+	private boolean cyclicDraw = true;
 	private boolean drawLimitSetWithPoint = false;
 	
 	private OPTDisplay(){
@@ -97,7 +97,7 @@ public class OPTDisplay extends Display{
 		Complex a1 = new Complex(0.25, 0);
 		Complex a2 = new Complex(0.25, 0);
 		cp = new ComplexProbability(a1, a2, Complex.ZERO);
-		cp.moveQ(new Complex(0, 0.3));
+//		cp.moveQ(new Complex(0, 0.3));
 		baseQ = cp.getQ();
 		baseR = cp.getR();
 		
@@ -141,22 +141,33 @@ public class OPTDisplay extends Display{
 			timer.cancel();
 	}
 	
+	private boolean baseQIm = false;
 	private class OSCLoudAction implements OSCReceivedAction{
 		@Override
 		public void doAction(Object[] values) {
 			float value = (float) values[0];
-			cp.setQ(baseQ.add(new Complex(tweakedQX/2, value)));
-			recalcLimitSet();
-			repaint();
+			if(baseQIm){
+				cp.setQ(baseQ.add(new Complex(tweakedQX/2, value/2)));
+				recalcLimitSet();
+				repaint();
+			}
 		}
 	}
 	
+	int count = 0 ;
 	private class AnimationTask extends TimerTask{
 		@Override
 		public void run() {
 			if(isRotating){
 				rotation += 0.5;
 				repaint();
+			}
+			if(changedFromSchottky){
+				count++;
+				if(count == 100){
+					changedFromSchottky = false;
+					baseQIm = true;
+				}
 			}
 		}
 	}
@@ -173,8 +184,8 @@ public class OPTDisplay extends Display{
 	private class CycleStepDownListener implements MidiControlChangedListener{
 		@Override
 		public void changed(int controlPort, float value) {
-			if(value == 127 && cycleStep > 3)
-				cycleStep-=2;
+			if(value == 127 && cycleStep > 0)
+				cycleStep -= 2;
 			repaint();
 		}
 	}
@@ -309,6 +320,12 @@ public class OPTDisplay extends Display{
 	
 	public static OPTDisplay getInstance(){
 		return instance;
+	}
+	
+	boolean changedFromSchottky = false;
+	public void changedFromSchottky(){
+		baseQIm = false;
+		changedFromSchottky = true;
 	}
 
 	private int cycleStep = 2;
