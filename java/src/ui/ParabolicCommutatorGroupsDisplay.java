@@ -83,6 +83,8 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		addMouseMotionListener(new MouseDraggedAdapter());
 		addKeyListener(new KeyPressedAdapter());
 		requestFocus();
+		
+		shown();
 	}
 	
 	@Override
@@ -97,6 +99,14 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M2, new PointSeriesLevelDownListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_SET, new InitButtonListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_PREV_TRACK, new ChangeToSchottkyListener());
+		
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_CYCLE, new MidiControlChangedListener() {
+			@Override
+			public void changed(int controlPort, float value) {
+				if(value == 127)
+					prepareForSchottky();
+			}
+		});
 
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 100);
@@ -183,9 +193,22 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 	}
 	
 	private void init(){
+		t_a = new Complex(1.91, 0.05);
+		t_b = new Complex(1.91, 0.05);
 		limitSetTranslation = Complex.ZERO;
 		initPointSeries();
+		recalc();
 		repaint();
+	}
+	
+	private void prepareForSchottky(){
+		t_a = new Complex(3);
+		t_b = new Complex(3);
+		rootButterfly = initialButterfly.copy();
+		recalcPointSeries();
+		recalc();
+		repaint();
+		operateButterfly = false;
 	}
 	
 	int maxStep = 100;
@@ -246,7 +269,7 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		if(isClickedRightButton){
 			translation = translation.add(limitSetTranslation);
 		}else if(operateButterfly){
-			translation = translation.add(new Complex(-(rootButterfly.upperLeft.re() + rootButterfly.width/2)*magnification,
+			translation = translation.add(new Complex(-(rootButterfly.upperLeft.re() + rootButterfly.width/2) * magnification,
 													  -(rootButterfly.upperLeft.im() - rootButterfly.height/2) * magnification));
 		}
 

@@ -38,9 +38,9 @@ public class Display extends JPanel{
 	}
 
 	protected void setModeChangeHandlers(){
-		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_BACKWARD, new ChangeToSchottkyListener());
-		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_FORWARD, new ChangeToOPTListener());
-		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_STOP, new ChangeToParabolicListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_FORWARD, new ChangeToSchottkyListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_STOP, new ChangeToOPTListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_BACKWARD, new ChangeToParabolicListener());
 	}
 
 	private class ChangeToSchottkyListener implements MidiControlChangedListener{

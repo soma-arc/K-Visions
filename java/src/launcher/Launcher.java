@@ -54,9 +54,10 @@ public class Launcher {
 		
 		frame.getContentPane().add(cardPanel);
 
+		cardPanel.add(ParabolicCommutatorGroupsDisplay.getInstance(), DisplayMode.PARABOLIC.name());
 		cardPanel.add(SchottkyDisplay.getInstance(), DisplayMode.SCHOTTKY.name());
 		cardPanel.add(OPTDisplay.getInstance(), DisplayMode.OPT.name());
-		cardPanel.add(ParabolicCommutatorGroupsDisplay.getInstance(), DisplayMode.PARABOLIC.name());
+		
 		BufferedImage image = new BufferedImage(64,64,  
                 BufferedImage.TYPE_4BYTE_ABGR);  
 		Graphics2D g2 = image.createGraphics();  
@@ -66,7 +67,10 @@ public class Launcher {
 		g2.dispose();  
 		cardPanel.setCursor(Toolkit.getDefaultToolkit().createCustomCursor(  
 				image, new Point(4,4), "null_cursor")); 
-		frame.setVisible(true);
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		device = ge.getDefaultScreenDevice();
+		frame.setUndecorated(true);
+		device.setFullScreenWindow(frame);;
 		MidiHandler.listenStart();
 	}
 	
