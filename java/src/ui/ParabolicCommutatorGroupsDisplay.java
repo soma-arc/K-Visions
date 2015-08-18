@@ -86,7 +86,7 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		
 		shown();
 	}
-	
+		
 	@Override
 	protected void shown(){
 		super.shown();
@@ -99,6 +99,8 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M2, new PointSeriesLevelDownListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_SET, new InitButtonListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_PREV_TRACK, new ChangeToSchottkyListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_R1, new ToggleOperateButterflyListener());
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_MARKER_PREV, new PrevButtonListener());
 		
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_CYCLE, new MidiControlChangedListener() {
 			@Override
@@ -153,7 +155,7 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 	private class MagnificationTweakListener implements MidiControlChangedListener{
 		@Override
 		public void changed(int controlPort, float value) {
-			magnification = 300 + 20 * value;
+			magnification = 200 + 20 * value;
 			repaint();
 		}
 	}
@@ -185,6 +187,16 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		}
 	}
 	
+	private class ToggleOperateButterflyListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127){
+				operateButterfly = !operateButterfly;
+				repaint();
+			}
+		}
+	}
+	
 	@Override
 	protected void hidden(){
 		super.hidden();
@@ -198,7 +210,25 @@ public class ParabolicCommutatorGroupsDisplay extends Display{
 		limitSetTranslation = Complex.ZERO;
 		initPointSeries();
 		recalc();
+		operateButterfly = true;
 		repaint();
+	}
+	
+	private class PrevButtonListener implements MidiControlChangedListener{
+
+		@Override
+		public void changed(int controlPort, float value) {
+			if(value == 127){
+				t_a = new Complex(1.914123, 1.2223);
+				t_b = new Complex(-2, 0.0);
+				limitSetTranslation = Complex.ZERO;
+				initPointSeries();
+				recalc();
+				operateButterfly = true;
+				repaint();
+			}
+		}
+		
 	}
 	
 	private void prepareForSchottky(){
