@@ -105,6 +105,7 @@ public class OPTDisplay extends Display{
 		
 		magnification = 500;
 		rotation = 0;
+		rotationStep = 0.5;
 		maxLevel = 30;
 		epsilon = 0.0019;
 		
@@ -140,22 +141,24 @@ public class OPTDisplay extends Display{
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M7, new ToggleQImListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_S8, new ToggleRReListener());
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.BUTTON_M8, new ToggleRImListener());
-		
+
 		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.KNOB8, new ValueMagnificationTweakListener());
 		
-		
+		MidiHandler.setMidiControlChangedListener(KorgNanoControl2.SLIDER3, new RotationStepTweakListener());
+
+
 		OSCHandler.setLoudAction(new OSCLoudAction());
 		timer = new Timer();
 		timer.schedule(new AnimationTask(), 0, 10);
 	}
-	
+
 	@Override
 	protected void hidden(){
 		super.hidden();
 		if(timer != null)
 			timer.cancel();
 	}
-	
+
 	private double valueMagnification = 0.5;
 	private boolean baseQIm = false;
 	private boolean baseQRe = false;
@@ -207,7 +210,7 @@ public class OPTDisplay extends Display{
 		@Override
 		public void run() {
 			if(isRotating){
-				rotation += 0.5;
+				rotation += rotationStep;
 				repaint();
 			}
 			if(changedFromSchottky){
@@ -344,6 +347,15 @@ public class OPTDisplay extends Display{
 		
 	}
 	
+	private double rotationStep = 0.5;
+	private class RotationStepTweakListener implements MidiControlChangedListener{
+		@Override
+		public void changed(int controlPort, float value) {
+			rotationStep = Math.min(0.5, 0.01 + value / 100);
+			repaint();
+		}
+	}
+	
 	private class RotationTweakListener implements MidiControlChangedListener{
 		@Override
 		public void changed(int controlPort, float value) {
@@ -454,13 +466,15 @@ public class OPTDisplay extends Display{
 	private float initialHue = 0.0f;
 	private float hueStep = 0.00001f;
 	private void drawLimitSet(Graphics2D g2){
+		synchronized (points) {
+			
 		g2.setColor(Color.ORANGE);
 		float hue = initialHue;
 		for(int n = (int) (-Math.ceil((getWidth()/2)/magnification)) ; n <= (getWidth()/2)/magnification ; n++){
 			if(drawLimitSetWithPoint){
 				for(int i = 0 ; i < points.size()-1; i++){
-					if(i >= points.size()) return;
 					g2.setColor(Color.getHSBColor(hue, 1.0f, 1.0f));
+					if(i >= points.size()) return;
 					Complex point = points.get(i);
 					g2.fillRect((int) ((point.re() + n) * magnification), (int) ((point.im()) * magnification),
 							1, 1);
@@ -479,6 +493,7 @@ public class OPTDisplay extends Display{
 					hue += hueStep;
 				}
 			}
+		}
 		}
 	}
 	
@@ -518,11 +533,18 @@ public class OPTDisplay extends Display{
 	
 	private void recalcLimitSet(){
 		if(drawLimitSet){
+			synchronized (points) {
+				synchronized (cp) {
+					
+				
 			for(SL2C gen : cp.getGens()){
 				if(gen == null) return;
 			}
 			dfs = new OPTLimitSetExplorer(cp.getGens());
-			points = dfs.run(maxLevel, epsilon, 100);
+			
+				points = dfs.run(maxLevel, epsilon, 50);
+			}
+			}
 		}
 	}
 
